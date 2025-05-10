@@ -74,12 +74,12 @@ void trim(char* str) {
     char* end;
 
     // Eliminar espacios iniciales
-    while (*str == ' ') str++;
+    while (*str == ' ' || *str == '\n') str++;
 
     // Si la cadena quedó vacía
     if (*str == 0) return;
 
-    // Eliminar espacios finales
+    // Eliminar espacios finales y saltos de línea
     end = str + strlen(str) - 1;
     while (end > str && (*end == ' ' || *end == '\n')) end--;
 
@@ -87,47 +87,46 @@ void trim(char* str) {
     *(end + 1) = '\0';
 }
 
+
 // ================= MODO MANUAL ================= //
 
-void modo_manual(const char* archivo_solicitudes) {
-    FILE* fp = fopen(archivo_solicitudes, "r");
-    if (!fp) {
-        perror("❌ Error al abrir archivo de solicitudes");
-        exit(1);
-    }
-
-    int pipe_fd = open(PIPE_NAME, O_WRONLY);
-    if (pipe_fd == -1) {
-        perror("❌ Error al abrir el pipe");
+// Función para leer un archivo de entrada
+void modo_manual(const char* archivo) {
+    FILE *fp = fopen(archivo, "r");
+    if (fp == NULL) {
+        perror("Error al abrir el archivo");
         exit(1);
     }
 
     char operacion[2], libro[100];
     int isbn;
-    char linea[256]; 
-    while (fgets(linea, sizeof(linea), fp)) {
-        char operacion[2], libro[100];
-        int isbn;
 
-    
-        if (sscanf(linea, "%1[^,],%99[^,],%d", operacion, libro, &isbn) == 3) {
-            trim(libro);  // 🚨 Aquí eliminamos los espacios del título
-    
-            if (buscarLibroPorNombre(libro) != NULL) {
-                enviar_solicitud(pipe_fd, operacion, libro, isbn);
-                printf("📨 Enviando solicitud: %s %s %d\n", operacion, libro, isbn);
-                sleep(1);
-            } else {
-                printf("⚠️  El libro \"%s\" no está en la biblioteca. Solicitud ignorada.\n", libro);
-            }
-        }
+    // Abrir el pipe FIFO
+    int pipe_fd = open(PIPE_NAME, O_WRONLY);
+    if (pipe_fd == -1) {
+        perror("Error al abrir el pipe");
+        exit(1);
     }
-    
 
-    close(pipe_fd);
-    fclose(fp);
-    printf("✅ Solicitudes procesadas desde archivo.\n");
+    // Leer el archivo línea por línea
+    while (fscanf(fp, "%1s,%99[^,],%d", operacion, libro, &isbn) != EOF) {
+        // Si encontramos el comando de salida "Q", terminamos
+        if (strcmp(operacion, "Q") == 0) {
+            printf("Fin de las solicitudes\n");
+            break;
+        }
+        // Enviar solicitud al RP
+        enviar_solicitud(pipe_fd, operacion, libro, isbn);
+        printf("Enviando solicitud: %s %s %d\n", operacion, libro, isbn);
+        sleep(1);  // Esperamos 1 segundo entre cada solicitud (simulación de tiempo)
+    }
+
+    // Cerramos el pipe
+    close(pipe_fd);  
+    // Cerramos el archivo
+    fclose(fp);      
 }
+
 
 // ================= MODO INTERACTIVO ================= //
 
