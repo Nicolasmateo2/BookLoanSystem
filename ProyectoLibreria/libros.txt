@@ -1,6 +1,9 @@
-Cálculo Diferencial,120,0
-Álgebra Lineal,111,0
-Historia de Colombia,223,0
-Hamlet,234,0
-Alicia en el País de las Maravillas,2133,0
-Satanas,543,0
+Cálculo Diferencial,120,2
+1,0,01-01-2023
+2,0,01-01-2023
+Álgebra Lineal,111,1
+1,0,01-01-2023
+Historia de Colombia,223,3
+1,0,08-01-2023
+2,1,10-01-2023
+3,1,15-01-2023
