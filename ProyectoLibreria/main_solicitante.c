@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #define PIPE_NAME "pipeReceptor"
 #define MAX_LIBROS 100
@@ -57,10 +58,16 @@ void cargarLibrosDesdeArchivo() {
                 biblioteca[num_libros].isbn = isbn;
                 biblioteca[num_libros].num_ejemplares = num_ejemplares;
 
-                // Inicializar ejemplares como disponibles
+                // Obtener fecha actual
+                time_t t = time(NULL);
+                struct tm *tm = localtime(&t);
+                char fecha_actual[20];
+                strftime(fecha_actual, sizeof(fecha_actual), "%d-%m-%Y", tm);
+
+                // Inicializar ejemplares como disponibles con fecha actual
                 for (int i = 0; i < num_ejemplares; i++) {
                     biblioteca[num_libros].prestados[i] = 0;
-                    strcpy(biblioteca[num_libros].fecha_devolucion[i], "01-01-2023");
+                    strcpy(biblioteca[num_libros].fecha_devolucion[i], fecha_actual);
                 }
                 num_libros++;
             }

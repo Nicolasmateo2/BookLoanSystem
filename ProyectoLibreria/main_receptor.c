@@ -98,17 +98,15 @@ void guardar_bd(const char* nombre_archivo) {
     fclose(archivo);
 }
 
+// Cambiar la función actualizar_fecha_devolucion por esta nueva versión:
 void actualizar_fecha_devolucion(char* fecha, int dias_adicionales) {
-    struct tm tm = {0};
-    if (strptime(fecha, "%d-%m-%Y", &tm) == NULL) {
-        perror("Error al parsear fecha");
-        return;
-    }
-    tm.tm_mday += dias_adicionales;
-    mktime(&tm);
+    time_t t = time(NULL);
+    t += dias_adicionales * 24 * 60 * 60; // Agregar días en segundos
+    struct tm tm = *localtime(&t);
     strftime(fecha, 20, "%d-%m-%Y", &tm);
 }
 
+// Cambiar la función obtener_fecha_actual por esta versión simplificada:
 char* obtener_fecha_actual() {
     static char fecha[20];
     time_t t = time(NULL);
