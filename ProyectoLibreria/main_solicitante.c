@@ -107,8 +107,6 @@ void modo_manual(const char* archivo) {
         exit(1);
     }
 
-    char operacion[2], libro[100];
-    int isbn;
     char linea[256];
     while (fgets(linea, sizeof(linea), fp)) {
         // Eliminar salto de línea final
@@ -134,14 +132,16 @@ void modo_manual(const char* archivo) {
             continue;
         }
 
-        // Verificar si es el comando de salida
-        if (strcmp(operacion, "Q") == 0) break;
-
         // Enviar al receptor
         write(pipe_fd, mensaje, strlen(mensaje) + 1);
         printf("📨 Enviando: %s\n", mensaje);
         sleep(1);
     }
+
+    // Al finalizar, enviar solicitud de parada
+    char mensaje_salida[] = "Q,Salir,0";
+    write(pipe_fd, mensaje_salida, strlen(mensaje_salida) + 1);
+    printf("📨 Enviando solicitud de parada: %s\n", mensaje_salida);
 
     close(pipe_fd);
     fclose(fp);
