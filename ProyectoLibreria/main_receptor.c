@@ -46,6 +46,7 @@ volatile int receptor_activo = 1;
 void cargar_bd(const char* archivo);
 void guardar_bd(const char* archivo);
 void actualizar_fecha_devolucion(char* fecha, int dias_adicionales);
+void procesar_solicitud_directa(char* mensaje);
 char* obtener_fecha_actual();
 Libro* buscarLibroPorISBN(int isbn);
 

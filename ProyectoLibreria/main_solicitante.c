@@ -109,10 +109,37 @@ void modo_manual(const char* archivo) {
 
     char operacion[2], libro[100];
     int isbn;
-    while (fscanf(fp, "%1s,%99[^,],%d", operacion, libro, &isbn) != EOF) {
+    char linea[256];
+    while (fgets(linea, sizeof(linea), fp)) {
+        // Eliminar salto de línea final
+        linea[strcspn(linea, "\n")] = '\0';
+
+        char operacion[2], libro[100];
+        int isbn, ejemplar = -1;
+        int num_campos = sscanf(linea, "%1[^,],%99[^,],%d,%d", operacion, libro, &isbn, &ejemplar);
+
+        if (num_campos < 3) {
+            printf("⚠️ Formato de línea inválido: %s\n", linea);
+            continue;
+        }
+
+        // Construir mensaje según el número de campos encontrados
+        char mensaje[256];
+        if (num_campos == 4) {
+            snprintf(mensaje, sizeof(mensaje), "%s,%s,%d,%d", operacion, libro, isbn, ejemplar);
+        } else if (num_campos == 3) {
+            snprintf(mensaje, sizeof(mensaje), "%s,%s,%d", operacion, libro, isbn);
+        } else {
+            printf("⚠️ Línea no válida: %s\n", linea);
+            continue;
+        }
+
+        // Verificar si es el comando de salida
         if (strcmp(operacion, "Q") == 0) break;
-        enviar_solicitud(pipe_fd, operacion, libro, isbn);
-        printf("📨 Enviando: %s %s %d\n", operacion, libro, isbn);
+
+        // Enviar al receptor
+        write(pipe_fd, mensaje, strlen(mensaje) + 1);
+        printf("📨 Enviando: %s\n", mensaje);
         sleep(1);
     }
 
