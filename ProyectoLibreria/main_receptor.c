@@ -354,6 +354,8 @@ int main(int argc, char* argv[]) {
             }
             if (strncmp(mensaje, "Q", 1) == 0) {
                 printf("🛑 Recibido comando de terminación\n");
+                receptor_activo = 0;
+                pthread_cond_broadcast(&buffer.not_empty);  // Despierta al hilo si está esperando
                 break;
             }
             procesar_solicitud(mensaje);
