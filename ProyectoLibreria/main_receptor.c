@@ -208,17 +208,17 @@ void procesar_solicitud_directa(char* mensaje) {
 void* manejar_comandos(void* arg) {
     char comando[50];
     while (1) {
-        printf("\nIngrese comando (reporte/salir): ");
+        printf("\nIngrese comando (r para reporte/s para salir): ");
         fgets(comando, sizeof(comando), stdin);
         comando[strcspn(comando, "\n")] = '\0';
 
-        if (strcmp(comando, "salir") == 0) {
+        if (strcmp(comando, "s") == 0) {
             printf("🛑 Terminando proceso receptor...\n");
             receptor_activo = 0;
             pthread_cond_broadcast(&buffer.not_empty);  // Despierta al consumidor si está esperando
             pthread_exit(NULL);  // Termina el hilo de comandos
 
-        } else if (strcmp(comando, "reporte") == 0) {
+        } else if (strcmp(comando, "r") == 0) {
             printf("\n📊 Reporte de Libros - %s\n", obtener_fecha_actual());
             printf("==================================\n");
             printf("Estado, Título, ISBN, Ejemplar, Fecha Devolución\n");

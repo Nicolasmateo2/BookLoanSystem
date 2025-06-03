@@ -92,7 +92,7 @@ void trim(char* str) {
     *(end + 1) = '\0';
 }
 
-// ================= MODO MANUAL ================= //
+// ================= MODO MANUAL/AUTOMATICO ================= //
 
 void modo_manual(const char* archivo) {
     FILE *fp = fopen(archivo, "r");
@@ -220,7 +220,7 @@ int main() {
     cargarLibrosDesdeArchivo();
 
     int modo;
-    printf("\n📌 Seleccione modo:\n1. Manual\n2. Interactivo\nOpción: ");
+    printf("\n📌 Seleccione modo:\n1. Automatico\n2. Interactivo\nOpción: ");
     scanf("%d", &modo);
     getchar();
 
