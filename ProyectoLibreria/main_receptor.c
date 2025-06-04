@@ -37,6 +37,7 @@ typedef struct {
 } BufferCompartido;
 
 Libro biblioteca[MAX_LIBROS];
+char* pipe_nombre = NULL;
 int num_libros = 0;
 int modo_verbose = 0;
 BufferCompartido buffer;   // Instancia global del buffer circular
@@ -213,11 +214,17 @@ void* manejar_comandos(void* arg) {
         comando[strcspn(comando, "\n")] = '\0';
 
         if (strcmp(comando, "salir") == 0) {
-            printf("🛑 Terminando proceso receptor...\n");
-            receptor_activo = 0;
-            pthread_cond_broadcast(&buffer.not_empty);  // Despierta al consumidor si está esperando
-            pthread_exit(NULL);  // Termina el hilo de comandos
+        printf("🛑 Terminando proceso receptor...\n");
 
+        // Enviar señal de terminación al pipe para desbloquear el hilo principal
+        int pipe_fd_write = open(pipe_nombre, O_WRONLY);
+        if (pipe_fd_write != -1) {
+            char mensaje_salida[] = "Q,Salir,0";
+            write(pipe_fd_write, mensaje_salida, strlen(mensaje_salida) + 1);
+            close(pipe_fd_write);
+            }
+        // Salir del hilo de comandos
+        pthread_exit(NULL);
         } else if (strcmp(comando, "reporte") == 0) {
             printf("\n📊 Reporte de Libros - %s\n", obtener_fecha_actual());
             printf("==================================\n");
@@ -295,7 +302,6 @@ void procesar_solicitud(char* mensaje) {
 // ================= FUNCIÓN PRINCIPAL ================= //
 
 int main(int argc, char* argv[]) {
-    char* pipe_nombre = PIPE_NAME;
     char* archivo_bd = "libros.txt";
     char* archivo_salida = NULL;
 
