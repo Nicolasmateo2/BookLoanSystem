@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <ctype.h>
 
 #define PIPE_NAME "pipeReceptor"
 #define MAX_LIBROS 100
@@ -50,6 +51,9 @@ void cargarLibrosDesdeArchivo() {
 
     char linea[256];
     while (fgets(linea, sizeof(linea), archivo)) {
+        // Saltar líneas de ejemplares
+        if (isdigit(linea[0])) continue;
+        
         char titulo[100];
         int isbn, num_ejemplares;
         if (sscanf(linea, "%99[^,],%d,%d", titulo, &isbn, &num_ejemplares) == 3) {
@@ -58,16 +62,17 @@ void cargarLibrosDesdeArchivo() {
                 biblioteca[num_libros].isbn = isbn;
                 biblioteca[num_libros].num_ejemplares = num_ejemplares;
 
-                // Obtener fecha actual
-                time_t t = time(NULL);
-                struct tm *tm = localtime(&t);
-                char fecha_actual[20];
-                strftime(fecha_actual, sizeof(fecha_actual), "%d-%m-%Y", tm);
-
-                // Inicializar ejemplares como disponibles con fecha actual
-                for (int i = 0; i < num_ejemplares; i++) {
-                    biblioteca[num_libros].prestados[i] = 0;
-                    strcpy(biblioteca[num_libros].fecha_devolucion[i], fecha_actual);
+                // Leer los ejemplares
+                for (int j = 0; j < num_ejemplares; j++) {
+                    if (!fgets(linea, sizeof(linea), archivo)) break;
+                    
+                    int ejemplar;
+                    char estado;
+                    char fecha[20];
+                    if (sscanf(linea, "%d, %c, %19s", &ejemplar, &estado, fecha) == 3) {
+                        biblioteca[num_libros].prestados[ejemplar-1] = (estado == 'P') ? 1 : 0;
+                        strcpy(biblioteca[num_libros].fecha_devolucion[ejemplar-1], fecha);
+                    }
                 }
                 num_libros++;
             }

@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <pthread.h>
 #include <time.h>
+#include <ctype.h>
 
 #define PIPE_NAME "pipeReceptor"
 #define MAX_LIBROS 100
@@ -71,6 +72,9 @@ void cargar_bd(const char* nombre_archivo) {
 
     char linea[256];
     while (fgets(linea, sizeof(linea), archivo)) {
+        // Saltar líneas que comienzan con número (ejemplares)
+        if (isdigit(linea[0])) continue;
+        
         char titulo[100];
         int isbn, num_ejemplares;
         if (sscanf(linea, "%99[^,],%d,%d", titulo, &isbn, &num_ejemplares) == 3) {
@@ -79,14 +83,15 @@ void cargar_bd(const char* nombre_archivo) {
                 biblioteca[num_libros].isbn = isbn;
                 biblioteca[num_libros].num_ejemplares = num_ejemplares;
 
+                // Leer los ejemplares
                 for (int j = 0; j < num_ejemplares; j++) {
-                    if (!fgets(linea, sizeof(linea), archivo)) {
-                        break;
-                    }
-                    int ejemplar, estado;
+                    if (!fgets(linea, sizeof(linea), archivo)) break;
+                    
+                    int ejemplar;
+                    char estado;
                     char fecha[20];
-                    if (sscanf(linea, "%d,%d,%19s", &ejemplar, &estado, fecha) == 3) {
-                        biblioteca[num_libros].prestados[ejemplar-1] = estado;
+                    if (sscanf(linea, "%d, %c, %19s", &ejemplar, &estado, fecha) == 3) {
+                        biblioteca[num_libros].prestados[ejemplar-1] = (estado == 'P') ? 1 : 0;
                         strcpy(biblioteca[num_libros].fecha_devolucion[ejemplar-1], fecha);
                     }
                 }
@@ -105,9 +110,11 @@ void guardar_bd(const char* nombre_archivo) {
     }
 
     for (int i = 0; i < num_libros; i++) {
-        fprintf(archivo, "%s,%d,%d\n", biblioteca[i].titulo, biblioteca[i].isbn, biblioteca[i].num_ejemplares);
+        fprintf(archivo, "%s, %d, %d\n", biblioteca[i].titulo, biblioteca[i].isbn, biblioteca[i].num_ejemplares);
         for (int j = 0; j < biblioteca[i].num_ejemplares; j++) {
-            fprintf(archivo, "%d,%d,%s\n", j+1, biblioteca[i].prestados[j], biblioteca[i].fecha_devolucion[j]);
+            fprintf(archivo, "%d, %c, %s\n", j+1, 
+                   biblioteca[i].prestados[j] ? 'P' : 'D', 
+                   biblioteca[i].fecha_devolucion[j]);
         }
     }
     fclose(archivo);
@@ -209,11 +216,11 @@ void procesar_solicitud_directa(char* mensaje) {
 void* manejar_comandos(void* arg) {
     char comando[50];
     while (1) {
-        printf("\nIngrese comando (reporte/salir): ");
+        printf("\nIngrese comando (r para reporte/s para salir): ");
         fgets(comando, sizeof(comando), stdin);
         comando[strcspn(comando, "\n")] = '\0';
 
-        if (strcmp(comando, "salir") == 0) {
+        if (strcmp(comando, "s") == 0) {
         printf("🛑 Terminando proceso receptor...\n");
 
         // Enviar señal de terminación al pipe para desbloquear el hilo principal
@@ -225,7 +232,7 @@ void* manejar_comandos(void* arg) {
             }
         // Salir del hilo de comandos
         pthread_exit(NULL);
-        } else if (strcmp(comando, "reporte") == 0) {
+        } else if (strcmp(comando, "r") == 0) {
             printf("\n📊 Reporte de Libros - %s\n", obtener_fecha_actual());
             printf("==================================\n");
             printf("Estado, Título, ISBN, Ejemplar, Fecha Devolución\n");
